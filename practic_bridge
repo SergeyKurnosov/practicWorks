@@ -1,0 +1,83 @@
+#include <iostream>
+#include <memory>
+#include <string>
+
+// Интерфейс рендерера
+class ITextRenderer {
+public:
+    virtual ~ITextRenderer() = default;
+    virtual void render(const std::string& text) const = 0;
+};
+
+// Реализация рендерера для верхнего регистра
+class UppercaseRenderer : public ITextRenderer {
+public:
+    void render(const std::string& text) const override {
+        std::string uppercased;
+        for (char c : text) {
+            uppercased += toupper(c);
+        }
+        std::cout << uppercased << std::endl;
+    }
+};
+
+// Реализация рендерера для нижнего регистра
+class LowercaseRenderer : public ITextRenderer {
+public:
+    void render(const std::string& text) const override {
+        std::string lowercased;
+        for (char c : text) {
+            lowercased += tolower(c);
+        }
+        std::cout << lowercased << std::endl;
+    }
+};
+
+// Абстракция текста
+class Text {
+protected:
+    std::unique_ptr<ITextRenderer> renderer;
+
+public:
+    Text(std::unique_ptr<ITextRenderer> r) : renderer(std::move(r)) {}
+    virtual ~Text() = default;
+
+    virtual void display(const std::string& content) const = 0;
+};
+
+// Конкретная реализация простого текста
+class SimpleText : public Text {
+public:
+    SimpleText(std::unique_ptr<ITextRenderer> r) : Text(std::move(r)) {}
+
+    void display(const std::string& content) const override {
+        renderer->render(content);
+    }
+};
+
+// Конкретная реализация заголовка текста
+class TitleText : public Text {
+public:
+    TitleText(std::unique_ptr<ITextRenderer> r) : Text(std::move(r)) {}
+
+    void display(const std::string& content) const override {
+        // Можно добавить дополнительное форматирование для заголовка, если нужно
+        renderer->render(content);
+    }
+};
+
+int main() {
+    // Создаем рендереры
+    auto upperCaseRenderer = std::make_unique<UppercaseRenderer>();
+    auto lowerCaseRenderer = std::make_unique<LowercaseRenderer>();
+
+    // Создаем текстовые объекты с разными рендерерами
+    SimpleText simpleText(std::move(lowerCaseRenderer));
+    TitleText titleText(std::move(upperCaseRenderer));
+
+    // Отображаем текст
+    simpleText.display("Hello, World!"); // Вывод: hello, world!
+    titleText.display("Hello, World!");   // Вывод: HELLO, WORLD!
+
+    return 0;
+}
