@@ -1,0 +1,80 @@
+#include <iostream>
+#include <vector>
+#include <memory>
+#include <string>
+
+// Абстрактный класс для компонентов меню
+class MenuComponent {
+public:
+    virtual ~MenuComponent() = default;
+    virtual void display(int depth = 0) const = 0;
+};
+
+// Класс для элемента меню
+class MenuItem : public MenuComponent {
+private:
+    std::string name_;
+
+public:
+    MenuItem(const std::string& name) : name_(name) {}
+
+    void display(int depth = 0) const override {
+        std::cout << std::string(static_cast<std::string::size_type>(depth), ' ') << '-' << name_ << std::endl;
+    }
+};
+
+// Класс для группы элементов меню
+class MenuGroup : public MenuComponent {
+private:
+    std::string name_;
+    std::vector<std::shared_ptr<MenuComponent>> components;
+
+public:
+    MenuGroup(const std::string& name) : name_(name) {}
+
+    void add(std::shared_ptr<MenuComponent> component) {
+        components.push_back(component);
+    }
+
+    void display(int depth = 0) const override {
+        std::cout << std::string(static_cast<std::string::size_type>(depth), '-') << name_ << std::endl;
+        for (const auto& component : components) {
+            component->display(depth + 1);
+        }
+    }
+};
+
+int main() {
+    // Создаем основное меню
+    auto mainMenu = std::make_shared<MenuGroup>("Menu");
+
+    // Создаем подменю "Файл"
+    auto fileMenu = std::make_shared<MenuGroup>("File");
+    fileMenu->add(std::make_shared<MenuItem>("Open"));
+    fileMenu->add(std::make_shared<MenuItem>("Save"));
+    fileMenu->add(std::make_shared<MenuItem>("Create"));
+
+    // Создаем подменю "Правка"
+    auto editMenu = std::make_shared<MenuGroup>("Change");
+    editMenu->add(std::make_shared<MenuItem>("Cancellation"));
+    editMenu->add(std::make_shared<MenuItem>("Repeat"));
+
+    // Создаем подменю "Вид"
+    auto viewMenu = std::make_shared<MenuGroup>("View");
+    
+    auto scaleMenu = std::make_shared<MenuGroup>("Size");
+    scaleMenu->add(std::make_shared<MenuItem>("+"));
+    scaleMenu->add(std::make_shared<MenuItem>("-"));
+
+    viewMenu->add(scaleMenu);
+
+    // Добавляем подменю в основное меню
+    mainMenu->add(fileMenu);
+    mainMenu->add(editMenu);
+    mainMenu->add(viewMenu);
+
+    // Отображаем меню
+    mainMenu->display();
+
+    return 0;
+}
