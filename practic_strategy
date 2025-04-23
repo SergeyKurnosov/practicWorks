@@ -1,0 +1,105 @@
+#include <iostream>
+#include <vector>
+#include <string>
+#include <cctype>
+#include <memory>
+
+// Интерфейс стратегии фильтрации
+class FilterStrategy {
+public:
+    virtual ~FilterStrategy() = default;
+    virtual bool filter(const std::string& word) const = 0;
+};
+
+// Конкретная стратегия: слова с заглавными символами
+class CapitalLetterFilter : public FilterStrategy {
+public:
+    bool filter(const std::string& word) const override {
+        return !word.empty() && std::isupper(word[0]);
+    }
+};
+
+// Конкретная стратегия: слова с одной цифрой
+class SingleDigitFilter : public FilterStrategy {
+public:
+    bool filter(const std::string& word) const override {
+        int digitCount = 0;
+        for (char c : word) {
+            if (std::isdigit(c)) {
+                digitCount++;
+            }
+        }
+        return digitCount == 1;
+    }
+};
+
+// Конкретная стратегия: слова длиной больше N
+class LengthFilter : public FilterStrategy {
+private:
+    size_t minLength;
+
+public:
+    LengthFilter(size_t n) : minLength(n) {}
+
+    bool filter(const std::string& word) const override {
+        return word.length() > minLength;
+    }
+};
+
+// Контекст, использующий стратегию фильтрации
+class FilterContext {
+private:
+    std::unique_ptr<FilterStrategy> strategy;
+
+public:
+    void setStrategy(std::unique_ptr<FilterStrategy> newStrategy) {
+        strategy = std::move(newStrategy);
+    }
+
+    std::vector<std::string> filterWords(const std::vector<std::string>& words) const {
+        std::vector<std::string> filteredWords;
+        for (const auto& word : words) {
+            if (strategy->filter(word)) {
+                filteredWords.push_back(word);
+            }
+        }
+        return filteredWords;
+    }
+};
+
+int main() {
+    // Пример текста
+    std::vector<std::string> words = {"Hello", "world", "C++", "123", "test1", "Example", "A1B2C3", "longword"};
+
+    // Создаем контекст для фильтрации
+    FilterContext context;
+
+    // Фильтруем слова с заглавными символами
+    context.setStrategy(std::make_unique<CapitalLetterFilter>());
+    auto capitalWords = context.filterWords(words);
+    
+    std::cout << "Слова с заглавными символами:\n";
+    for (const auto& word : capitalWords) {
+        std::cout << word << "\n";
+    }
+
+    // Фильтруем слова с одной цифрой
+    context.setStrategy(std::make_unique<SingleDigitFilter>());
+    auto singleDigitWords = context.filterWords(words);
+    
+    std::cout << "\nСлова с одной цифрой:\n";
+    for (const auto& word : singleDigitWords) {
+        std::cout << word << "\n";
+    }
+
+    // Фильтруем слова длиной больше 5
+    context.setStrategy(std::make_unique<LengthFilter>(5));
+    auto longWords = context.filterWords(words);
+    
+    std::cout << "\nСлова длиной больше 5:\n";
+    for (const auto& word : longWords) {
+        std::cout << word << "\n";
+    }
+
+    return 0;
+}
